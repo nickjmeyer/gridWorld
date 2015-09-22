@@ -16,7 +16,7 @@ library(grid)
 ##             g$goal x,y coordinate of goal
 ##             g$s current state
 ##             .... theres other stuff too (but maybe not important)
-newGrid<-function(start = c(6,1),step = -0.1,puddle = -10,goal = 50,
+newGrid<-function(start = c(6,1),step = -1,puddle = -10,goal = 50,
                   noise = 0.8){
   g = list()
   g$x = g$y = 10
