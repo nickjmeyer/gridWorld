@@ -3,7 +3,19 @@ rm(list=ls(all=TRUE))
 library(ggplot2)
 library(grid)
 
-
+## @param start : x,y coordinate of starting location, x,y in {1,...,10}
+## @param step : reward for each non-puddle and goal state
+## @param puddle :reward for the puddle states
+## @param goal : reward for the goal state
+## @param noise : the probability of adhearing to the selected action
+## @return g : a list defining the grid and the system
+##             g$x max x coordinate
+##             g$y max y coordinate
+##             g$r matrix of rewards by state
+##             g$noise probability of adhearing to chosen action
+##             g$goal x,y coordinate of goal
+##             g$s current state
+##             .... theres other stuff too (but maybe not important)
 newGrid<-function(start = c(6,1),step = -0.1,puddle = -10,goal = 50,
                   noise = 0.8){
   g = list()
@@ -58,6 +70,12 @@ newGrid<-function(start = c(6,1),step = -0.1,puddle = -10,goal = 50,
 }
 
 
+## @param s : x,y coordinate for initial state where x in [1,g$x] y in [1,g$y]
+## @param a : action where a in [1,length(g$actions)]
+## @param sp : x,y coordinate for next state where x in [1,g$x] y in [1,g$y]
+## @param g : a grid object
+## @return prob : the probability of ending in state sp when starting in
+##                state s and taking action a
 transProb<-function(s,a,sp,g){
   if(s[1] < 1 || s[1] > g$x)
     stop("s[1] is outside of bounds")
@@ -75,6 +93,7 @@ transProb<-function(s,a,sp,g){
   if(all(s == g$goal))
     return(ifelse(all(s == sp),1.0,0.0))
 
+  ## if adhearance
   sa = s + g$actions[[a]]
   sa[1] = min(max(sa[1],1),g$x)
   sa[2] = min(max(sa[2],1),g$y)
@@ -83,6 +102,7 @@ transProb<-function(s,a,sp,g){
   if(all(sa == sp))
     prob = prob + 1.0 - g$noise
 
+  ## if noisy action
   for(i in 1:length(g$actions)){
     sa = s + g$actions[[i]]
     sa[1] = min(max(sa[1],1),g$x)
@@ -96,6 +116,10 @@ transProb<-function(s,a,sp,g){
 
 
 
+## @param s : x,y coordinate, where x in [1,g$x] y in [1,g$y]
+## @param a : action,  where a in [1,length(g$actions)]
+## @param g : a grid object
+## @return er : expected reward from taking action a in state s
 expReward<-function(s,a,g){
   if(s[1] < 1 || s[1] > g$x)
     stop("s[1] is outside of bounds")
@@ -108,12 +132,14 @@ expReward<-function(s,a,g){
   if(all(s == g$goal))
     return(0.0)
 
+  ## if adhearance
   sa = s + g$actions[[a]]
   sa[1] = min(max(sa[1],1),g$x)
   sa[2] = min(max(sa[2],1),g$y)
 
   er = g$r[sa[1],sa[2]] * (1.0 - g$noise)
 
+  ## if noisy action
   for(i in 1:length(g$actions)){
     sa = s + g$actions[[i]]
     sa[1] = min(max(sa[1],1),g$x)
@@ -126,19 +152,29 @@ expReward<-function(s,a,g){
 
 
 
+## @param a : action, where a in [1,length(g$actions)]
+## @param g : grid object
+## @return tuple : tuple$s is starting state
+##                 tuple$a is action
+##                 tuple$sp is the ending state
+##                 tuple$r is the reward received
+##                 tuple$g is the updated grid (only g$s changes)
 nextStep<-function(a,g){
   if(a < 1 || a > length(g$actions))
     stop("a is not a valid action")
 
 
 
+  ## record state and action
   tuple = list()
   tuple$s = g$s
   tuple$a = a
 
+
   if(!all(g$s == g$goal)){
+    ## if not at the goal state
+
     if(runif(1) < g$noise){
-      print("noisy")
       a = sample(1:length(g$actions),1)
     }
 
@@ -151,6 +187,7 @@ nextStep<-function(a,g){
     tuple$sp = g$s
   }
   else{
+    ## if at the goal state, reward of 0
     tuple$r = 0
     tuple$sp = g$s
   }
@@ -162,6 +199,9 @@ nextStep<-function(a,g){
 
 
 
+## @param g : a grid object
+## @param policy : a g$x by g$y matrix, each element is in [1,length(g$actions)]
+## @param showState : a boolean value, true if state should be plotted
 plotGrid<-function(g,policy=NULL,showState=FALSE){
   pData = NULL
   ind = 1
