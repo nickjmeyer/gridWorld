@@ -23,3 +23,14 @@ policy = matrix(sample(1:4,g$x*g$y,replace=TRUE),nrow=g$x,ncol=g$y)
 
 ## plot the policy
 plotGrid(g,policy=policy)
+
+
+## probability of moving from s to sp by taking action a
+s = c(1,7)
+sp = c(1,8)
+a = 1
+transProb(s,a,sp,g)
+
+
+## expected reward from taking action a in state s
+expReward(s,a,g)
