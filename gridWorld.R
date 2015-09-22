@@ -4,8 +4,8 @@ library(ggplot2)
 library(grid)
 
 
-newGrid<-function(start = c(4,1),step = -1,puddle = -10,goal = 50,
-                  noise = 0.1){
+newGrid<-function(start = c(6,1),step = -0.1,puddle = -10,goal = 50,
+                  noise = 0.8){
   g = list()
   g$x = g$y = 10
 
@@ -23,7 +23,7 @@ newGrid<-function(start = c(4,1),step = -1,puddle = -10,goal = 50,
 
   g$goal = c(8,9)
 
-  g$r = matrix(-1,g$x,g$y)
+  g$r = matrix(step,g$x,g$y)
 
   g$r[g$goal[1],g$goal[2]] = goal
   g$r[g$goal[1]+1,g$goal[2]] = puddle
@@ -33,19 +33,20 @@ newGrid<-function(start = c(4,1),step = -1,puddle = -10,goal = 50,
   g$r[g$goal[1]-1,g$goal[2]] = puddle
   g$r[g$goal[1]-1,g$goal[2]+1] = puddle
 
-  ind = expand.grid(2:8,2:4)
+  ind = expand.grid(3:8,2:4)
   g$r[ind[,1],ind[,2]] = puddle
 
-  g$r[4,3] = step
-  g$r[4,4] = step
+  g$r[6,c(3,4)] = step
 
-  ind = expand.grid(2:3,6:9)
+  ind = expand.grid(3:4,6:8)
   g$r[ind[,1],ind[,2]] = puddle
 
   g$r[7,c(6,7)] = puddle
   g$r[c(9,10),6] = puddle
 
-  g$r[5,c(5,6)] = puddle
+  g$r[9,c(4,5)] = puddle
+
+  g$r[6,6] = puddle
 
   g$s = start
 
@@ -71,6 +72,9 @@ transProb<-function(s,a,sp,g){
   if(a < 1 || a > length(g$actions))
     stop("a is not a valid action")
 
+  if(all(s == g$goal))
+    return(ifelse(all(s == sp),1.0,0.0))
+
   sa = s + g$actions[[a]]
   sa[1] = min(max(sa[1],1),g$x)
   sa[2] = min(max(sa[2],1),g$y)
@@ -92,25 +96,64 @@ transProb<-function(s,a,sp,g){
 
 
 
+expReward<-function(s,a,g){
+  if(s[1] < 1 || s[1] > g$x)
+    stop("s[1] is outside of bounds")
+  else if(s[2] < 1 || s[2] > g$y)
+    stop("s[2] is outside of bounds")
+
+  if(a < 1 || a > length(g$actions))
+    stop("a is not a valid action")
+
+  if(all(s == g$goal))
+    return(0.0)
+
+  sa = s + g$actions[[a]]
+  sa[1] = min(max(sa[1],1),g$x)
+  sa[2] = min(max(sa[2],1),g$y)
+
+  er = g$r[sa[1],sa[2]] * (1.0 - g$noise)
+
+  for(i in 1:length(g$actions)){
+    sa = s + g$actions[[i]]
+    sa[1] = min(max(sa[1],1),g$x)
+    sa[2] = min(max(sa[2],1),g$y)
+
+    er = er + g$r[sa[1],sa[2]] * g$noise / length(g$actions)
+  }
+  return(er)
+}
+
+
+
 nextStep<-function(a,g){
   if(a < 1 || a > length(g$actions))
     stop("a is not a valid action")
+
+
 
   tuple = list()
   tuple$s = g$s
   tuple$a = a
 
-  if(runif(1) < g$noise){
-    print("noisy")
-    a = sample(1:length(g$actions),1)
+  if(!all(g$s == g$goal)){
+    if(runif(1) < g$noise){
+      print("noisy")
+      a = sample(1:length(g$actions),1)
+    }
+
+    g$s = g$s + g$actions[[a]]
+    g$s[1] = min(max(g$s[1],1),g$x)
+    g$s[2] = min(max(g$s[2],1),g$y)
+
+
+    tuple$r = g$r[g$s[1],g$s[2]]
+    tuple$sp = g$s
   }
-
-  g$s = g$s + g$actions[[a]]
-  g$s[1] = min(max(g$s[1],1),g$x)
-  g$s[2] = min(max(g$s[2],1),g$y)
-
-  tuple$r = g$r[g$s[1],g$s[2]]
-  tuple$sp = g$s
+  else{
+    tuple$r = 0
+    tuple$sp = g$s
+  }
 
   tuple$g = g
 
@@ -119,7 +162,7 @@ nextStep<-function(a,g){
 
 
 
-plotGrid<-function(g,policy=NULL){
+plotGrid<-function(g,policy=NULL,showState=FALSE){
   pData = NULL
   ind = 1
   for(x in 1:g$x){
@@ -158,9 +201,11 @@ plotGrid<-function(g,policy=NULL){
     pData = NULL
     for(x in 1:g$x){
       for(y in 1:g$y){
-        a = g$actions[[policy[x,y]]] * 0.35
+        if(!(x == g$goal[1] && y == g$goal[2])){
+          a = g$actions[[policy[x,y]]] * 0.35
 
-        pData = rbind(pData,c(x-a[1],y-a[2],x+a[1],y+a[2]))
+          pData = rbind(pData,c(x-a[1],y-a[2],x+a[1],y+a[2]))
+        }
       }
     }
     pData = as.data.frame(pData)
@@ -171,9 +216,11 @@ plotGrid<-function(g,policy=NULL){
   }
 
 
-  sPoint = data.frame(x = g$s[1], y = g$s[2])
-  p = p + geom_point(data=sPoint,aes(x=x,y=y),color="black",
-                     size=6,shape=21,fill="gold1")
+  if(showState){
+    sPoint = data.frame(x = g$s[1], y = g$s[2])
+    p = p + geom_point(data=sPoint,aes(x=x,y=y),color="black",
+                       size=6,shape=21,fill="gold1")
+  }
 
   p = p + coord_fixed()
 
