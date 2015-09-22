@@ -1,5 +1,3 @@
-rm(list=ls(all=TRUE))
-
 library(ggplot2)
 library(grid)
 
@@ -7,15 +5,15 @@ library(grid)
 ## @param step : reward for each non-puddle and goal state
 ## @param puddle :reward for the puddle states
 ## @param goal : reward for the goal state
-## @param noise : the probability of adhearing to the selected action
+## @param noise : the probability of adhering to the selected action
 ## @return g : a list defining the grid and the system
 ##             g$x max x coordinate
 ##             g$y max y coordinate
 ##             g$r matrix of rewards by state
-##             g$noise probability of adhearing to chosen action
+##             g$noise probability of adhering to chosen action
 ##             g$goal x,y coordinate of goal
 ##             g$s current state
-##             .... theres other stuff too (but maybe not important)
+##             .... there's other stuff too (but maybe not important)
 newGrid<-function(start = c(6,1),step = -1,puddle = -10,goal = 50,
                   noise = 0.8){
   g = list()
@@ -93,7 +91,7 @@ transProb<-function(s,a,sp,g){
   if(all(s == g$goal))
     return(ifelse(all(s == sp),1.0,0.0))
 
-  ## if adhearance
+  ## if adherence
   sa = s + g$actions[[a]]
   sa[1] = min(max(sa[1],1),g$x)
   sa[2] = min(max(sa[2],1),g$y)
@@ -132,7 +130,7 @@ expReward<-function(s,a,g){
   if(all(s == g$goal))
     return(0.0)
 
-  ## if adhearance
+  ## if adherence
   sa = s + g$actions[[a]]
   sa[1] = min(max(sa[1],1),g$x)
   sa[2] = min(max(sa[2],1),g$y)
