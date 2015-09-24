@@ -1,5 +1,6 @@
 library(doMC)
 library(foreach)
+library(Rcpp)
 registerDoMC(detectCores())
 
 tForPolicy<-function(policy,g){
@@ -32,6 +33,7 @@ rForPolicy<-function(policy,g){
   return(R)
 }
 
+
 valueIter<-function(v,g,gamma = 1.0){
   vA = lapply(1:length(g$actions),
               function(a){
@@ -43,8 +45,31 @@ valueIter<-function(v,g,gamma = 1.0){
   return(do.call(pmax,args=vA))
 }
 
+valueIterIP<-function(v,g,gamma=1.0){
+  indV = 1
+  for(x in 1:g$x){
+    for(y in 1:g$y){
+      vA = rep(0,length(g$actions))
+      for(a in 1:length(g$actions)){
+        T = rep(0,g$x*g$y)
+        indT = 1
+        for(xp in 1:g$x){
+          for(yp in 1:g$y){
+            T[indT] = transProb(c(x,y),a,c(xp,yp),g)
+            indT = indT + 1
+          }
+        }
+        vA[a] = expReward(c(x,y),a,g) + gamma * sum(T*v)
+      }
+      v[indV]= max(vA)
+      indV = indV + 1
+    }
+  }
+  return(v)
+}
 
-valueIterFast<-function(v,g,gamma = 1.0){
+
+valueIterPar<-function(v,g,gamma = 1.0){
   v = foreach(x=1:g$x,.combine=c)%:%
     foreach(y=1:g$y,.combine=c)%dopar%{
       vA = lapply(1:length(g$actions),
@@ -66,16 +91,21 @@ valueIterFast<-function(v,g,gamma = 1.0){
 
 
 solveValueIter<-function(g,vInit=NULL,gamma = 1.0,
-                         tol=1e-8,verbose=FALSE,fast=TRUE){
+                         tol=1e-8,verbose=FALSE,method="IP"){
   if(is.null(vInit)){
     vInit = rep(0,g$x*g$y)
   }
+
+  if(method == "Par")
+    iterFunc = valueIterPar
+  else if(method == "IP")
+    iterFunc = valueIterIP
+  else
+    iterFunc = valueIter
+
   converged = FALSE
   while(!converged){
-    if(fast)
-      v = valueIterFast(vInit,g,gamma)
-    else
-      v = valueIter(vInit,g,gamma)
+    v = iterFunc(vInit,g,gamma)
 
     converged = (sum((v-vInit)^2) < tol)
     if(verbose)
