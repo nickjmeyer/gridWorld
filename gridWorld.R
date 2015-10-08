@@ -89,7 +89,7 @@ transProb<-function(s,a,sp,g){
     stop("a is not a valid action")
 
   if(all(s == g$goal))
-    return(ifelse(all(s == sp),1.0,0.0))
+    return(0.0)
 
   ## if adherence
   sa = s + g$actions[[a]]
