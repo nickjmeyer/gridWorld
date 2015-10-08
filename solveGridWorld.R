@@ -107,10 +107,10 @@ solveValueIter<-function(g,vInit=NULL,gamma = 1.0,
   while(!converged){
     v = iterFunc(vInit,g,gamma)
 
-    converged = (sum((v-vInit)^2) < tol)
+    converged = (norm(v-vInit,"2") < tol)
     if(verbose)
       cat(paste(sprintf("% 16.8f",sum(v)),"::",
-                sprintf("% 16.8f\n",sum((v-vInit)^2))))
+                sprintf("% 16.8f\n",norm(v-vInit,"2"))))
     vInit = v
   }
   return(v)
