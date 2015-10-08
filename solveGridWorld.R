@@ -91,17 +91,19 @@ valueIterPar<-function(v,g,gamma = 1.0){
 
 
 solveValueIter<-function(g,vInit=NULL,gamma = 1.0,
-                         tol=1e-8,verbose=FALSE,method="IP"){
+                         tol=1e-8,verbose=FALSE,method=NULL){
   if(is.null(vInit)){
     vInit = rep(0,g$x*g$y)
   }
 
-  if(method == "Par")
+  if(is.null(method))
+    iterFunc = valueIter
+  else if(method == "Par")
     iterFunc = valueIterPar
   else if(method == "IP")
     iterFunc = valueIterIP
   else
-    iterFunc = valueIter
+    stop(paste("Invalid method of",method))
 
   converged = FALSE
   while(!converged){
