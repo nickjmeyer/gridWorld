@@ -1,7 +1,11 @@
 library(doMC)
 library(foreach)
 library(Rcpp)
+library(RcppArmadillo)
 registerDoMC(detectCores())
+
+sourceCpp("valueIt.cpp")
+
 
 tForPolicy<-function(policy,g){
   T = matrix(0,g$x*g$y,g$x*g$y)
@@ -90,6 +94,17 @@ valueIterPar<-function(v,g,gamma = 1.0){
 }
 
 
+valueIterFast<-function(v,g,gamma = 1.0){
+  return(solveValueIterFast(v,c(g$r),
+                            as.integer(g$x),as.integer(g$y),
+                            as.integer(g$goal[1]-1),as.integer(g$goal[2]-1),
+                            as.double(g$noise),
+                            as.integer(g$s[1]-1),as.integer(g$s[2]-1),
+                            unlist(g$actions),
+                            as.double(1.0),as.double(1e-8)))
+}
+
+
 solveValueIter<-function(g,vInit=NULL,gamma = 1.0,
                          tol=1e-8,verbose=FALSE,method=NULL){
   if(is.null(vInit)){
@@ -102,6 +117,8 @@ solveValueIter<-function(g,vInit=NULL,gamma = 1.0,
     iterFunc = valueIterPar
   else if(method == "IP")
     iterFunc = valueIterIP
+  else if(method == "Fast")
+    iterFunc = valueIterFast
   else
     stop(paste("Invalid method of",method))
 
