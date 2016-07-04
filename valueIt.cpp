@@ -46,7 +46,7 @@ class Grid {
        const int n,
        const Coord d,
        const Coord g,
-       const Coord s,
+       const Coord start,
        const double noise,
        const int nActions,
        const std::vector<Action> actions);
@@ -55,7 +55,7 @@ class Grid {
   int n;
   Coord d;
   Coord g;
-  Coord s;
+  Coord start;
   double noise;
   int nActions;
   std::vector<Action> actions;
@@ -72,17 +72,18 @@ Grid::Grid(const std::vector<double> r,
 	   const int n,
 	   const Coord d,
 	   const Coord g,
-	   const Coord s,
+	   const Coord start,
 	   const double noise,
 	   const int nActions,
 	   const std::vector<Action> actions)
-  :r(r),n(n),d(d),g(g),s(s),noise(noise),nActions(nActions),actions(actions){
+  :r(r),n(n),d(d),g(g),start(start),
+   noise(noise),nActions(nActions),actions(actions){
 };
 
 
 
-int Grid::c2i(const Coord & val){
-  return val.y * d.x + val.x;
+int Grid::c2i(const Coord & s){
+  return s.y * d.x + s.x;
 }
 
 
