@@ -81,8 +81,8 @@ Grid::Grid(const std::vector<double> r,
 
 
 
-int Grid::c2i(const Coord & s){
-  return s.y * d.x + s.x;
+int Grid::c2i(const Coord & val){
+  return val.y * d.x + val.x;
 }
 
 
