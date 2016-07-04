@@ -89,15 +89,30 @@ int Grid::c2i(const Coord & s){
 
 Coord Grid::move(const Coord & s, const Action & a){
   Coord sp(std::max(std::min(d.x-1,s.x + a.x),0),
-	std::max(std::min(d.y-1,s.y + a.y),0));
+	   std::max(std::min(d.y-1,s.y + a.y),0));
   return sp;
 }
 
 
 double Grid::transProb(const Coord & s, const Action & a, const Coord & sp){
-  if(s == g && s == sp)
-    return 1.0;
-  else if(s == g)
+  if(s.x < 0 || s.x >= d.x){
+    printf("x is out of bounds\n");
+    throw(1);
+  }
+  else if(s.y < 0 || s.y >= d.y){
+    printf("y is out of bounds\n");
+    throw(1);
+  }
+  else if(sp.x < 0 || sp.x >= d.x){
+    printf("x is out of bounds\n");
+    throw(1);
+  }
+  else if(sp.y < 0 || sp.y >= d.y){
+    printf("y is out of bounds\n");
+    throw(1);
+  }
+
+  if(s == g)
     return 0;
   else{
     // if adherence
@@ -112,6 +127,10 @@ double Grid::transProb(const Coord & s, const Action & a, const Coord & sp){
       sa = move(s,actions[i]);
       if(sa == sp)
 	prob += noise/double(nActions);
+    }
+    if(prob < 0 || prob > 1.0){
+      printf("prob is out of range\n");
+      throw(1);
     }
     return(prob);
   }
@@ -160,6 +179,7 @@ solveValueIterFast(arma::colvec v,
   Grid g(r,dX*dY,Coord(dX,dY),Coord(gX,gY),Coord(sX,sY),
   	 noise,actions_.size(),actions_);
 
+
   std::vector<arma::colvec> eR(g.actions.size());
   std::vector<arma::mat> T(g.actions.size());
 
@@ -181,6 +201,22 @@ solveValueIterFast(arma::colvec v,
     }
   }
 
+
+  ////////////////////////////////////////
+  // order of x and y is flipped between R and C++ worlds
+  // quick hack to fix the ordering
+  ////////////////////////////////////////
+  // part 2 of hack to fix the order of x and y
+  arma::colvec vCpy;
+  vCpy = v;
+  for(x = 0; x < g.d.x; x++){
+    for(y = 0; y < g.d.y; y++){
+      v(x * g.d.y + y) = vCpy(y * g.d.x + x);
+    }
+  }
+  ////////////////////////////////////////
+
+
   arma::colvec vp = v;
   bool cont = true;
   int s;
@@ -200,10 +236,22 @@ solveValueIterFast(arma::colvec v,
     }
 
     double diff = arma::norm(vp - v,2);
+    printf("% 16.8f :: % 16.8f\n",arma::sum(v),diff);
+
     cont = diff > tol;
     vp = v;
-    printf("% 16.8f :: % 16.8f\n",arma::sum(v),diff);
+    cont = false;
   }
+
+  ////////////////////////////////////////
+  // part 2 of hack to fix the order of x and y
+  vCpy = v;
+  for(x = 0; x < g.d.x; x++){
+    for(y = 0; y < g.d.y; y++){
+      v(x * g.d.y + y) = vCpy(y * g.d.x + x);
+    }
+  }
+  ////////////////////////////////////////
+
   return v;
-  // return arma::colvec(1);
 }
