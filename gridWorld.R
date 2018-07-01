@@ -272,4 +272,5 @@ plotGrid<-function(g,policy=NULL,showState=FALSE){
   p = p + ggtitle("Grid World")
 
   print(p)
+  return(p)
 }
