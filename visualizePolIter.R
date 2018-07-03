@@ -31,3 +31,17 @@ while(!converged){
 
     polInit = policy
 }
+
+g = newGrid()
+p = plotGrid(g, showState = TRUE)
+iter = 0
+ggsave(sprintf("demo_%03d.png", iter), p)
+while(!(g$s[1] == 8 && g$s[2] == 9))
+{
+    print(policy[g$s[1], g$s[2]])
+    g = nextStep(policy[g$s[1], g$s[2]], g)$g
+    p = plotGrid(g, showState = TRUE)
+    print(g$s)
+    iter = iter + 1
+    ggsave(sprintf("demo_%03d.png", iter), p)
+}
