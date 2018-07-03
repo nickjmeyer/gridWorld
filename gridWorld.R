@@ -261,15 +261,18 @@ plotGrid<-function(g,policy=NULL,showState=FALSE){
   }
 
   p = p + coord_fixed()
+  p = p + scale_x_continuous(expand=c(0,0))
+  p = p + scale_y_continuous(expand=c(0,0))
 
   p = p + theme(panel.grid = element_blank(),
                 panel.border = element_blank(),
                 panel.background = element_blank(),
                 axis.text = element_blank(),
                 axis.ticks = element_blank(),
-                axis.title= element_blank())
-
-  p = p + ggtitle("Grid World")
+                axis.title = element_blank(),
+                legend.text = element_text(size = 15),
+                legend.title = element_text(size = 20),
+                plot.title = element_text(size = 20))
 
   print(p)
   return(p)
